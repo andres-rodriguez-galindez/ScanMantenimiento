@@ -215,36 +215,19 @@ def extraer_info_maquina():
     <meta charset='utf-8'>
     <title>Reporte de Información de la Máquina</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 30px; }
-        h1 { color: #2c3e50; }
-        h2 { color: #34495e; }
-        ul { margin-bottom: 20px; }
-        table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
-        th, td { border: 1px solid #888; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .section { margin-bottom: 30px; }
+        body {{ font-family: Arial, sans-serif; margin: 30px; }}
+        h1 {{ color: #2c3e50; }}
+        h2 {{ color: #34495e; }}
+        ul {{ margin-bottom: 20px; }}
+        table {{ border-collapse: collapse; width: 100%; margin-bottom: 30px; }}
+        th, td {{ border: 1px solid #888; padding: 8px; text-align: left; }}
+        th {{ background-color: #f2f2f2; }}
+        .section {{ margin-bottom: 30px; }}
     </style>
 </head>
 <body>
     <h1>Reporte de Información de la Máquina</h1>
-
-    <div class="section">
-        <h2>Datos Generales</h2>
-        <ul>
-            <li><b>Nombre del equipo:</b> {}</li>
-            <li><b>Usuario actual:</b> {}</li>
-            <li><b>Sistema operativo:</b> {}</li>
-            <li><b>Arquitectura:</b> {}</li>
-            <li><b>Procesador:</b> {}</li>
-            <li><b>Memoria RAM (GB):</b> {}</li>
-            <li><b>Serial:</b> {}</li>
-            <li><b>Marca:</b> {}</li>
-            <li><b>Modelo:</b> {}</li>
-        </ul>
-    </div>
-    <div class="section">
-        <h2>Discos</h2>
-        <ul>
+    ...
 """.format(
         info["Nombre del equipo"],
         info["Usuario actual"],
