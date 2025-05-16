@@ -105,7 +105,6 @@ def obtener_usuarios_estado():
     try:
         salida = subprocess.check_output('net user', shell=True, text=True, errors='ignore')
         lineas = salida.split('\n')
-        # Buscar la línea donde empiezan los usuarios y donde terminan
         usuarios_encontrados = []
         captura = False
         for linea in lineas:
@@ -113,8 +112,13 @@ def obtener_usuarios_estado():
                 captura = not captura
                 continue
             if captura:
-                usuarios_encontrados.extend(linea.split())
-        # Ahora sí, consultar el estado de cada usuario real
+                # Solo agregar si la línea no está vacía y no contiene el mensaje final
+                if linea.strip() and "El comando se ha ejecutado correctamente." not in linea:
+                    usuarios_encontrados.extend(linea.split())
+        # Filtrar posibles palabras que no sean usuarios válidos
+        palabras_invalidas = {"El", "comando", "se", "ha", "ejecutado", "correctamente."}
+        usuarios_encontrados = [u for u in usuarios_encontrados if u not in palabras_invalidas]
+        # Consultar el estado de cada usuario real
         for usuario in usuarios_encontrados:
             try:
                 detalle = subprocess.check_output(f'net user "{usuario}"', shell=True, text=True, errors='ignore')
