@@ -100,6 +100,26 @@ def obtener_valor_wmic_o_powershell(comando_wmic, comando_powershell, clave):
     except Exception:
         return "No disponible"
 
+def obtener_lista_usuarios_netuser():
+    try:
+        salida = subprocess.check_output('net user', shell=True, text=True, errors='ignore')
+        lineas = salida.splitlines()
+        usuarios = []
+        captura = False
+        for linea in lineas:
+            if "----" in linea:
+                captura = not captura
+                continue
+            if captura:
+                if linea.strip() and "El comando se ha ejecutado correctamente." not in linea:
+                    usuarios += [u for u in linea.split() if u.strip()]
+        # Filtrar posibles palabras que no sean usuarios válidos
+        palabras_invalidas = {"El", "comando", "se", "ha", "ejecutado", "correctamente.", "The", "command", "completed", "successfully."}
+        usuarios = [u for u in usuarios if u not in palabras_invalidas]
+        return usuarios
+    except Exception:
+        return ["No disponible"]
+
 def obtener_usuarios_estado():
     usuarios = []
     try:
