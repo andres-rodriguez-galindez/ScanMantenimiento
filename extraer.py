@@ -101,26 +101,35 @@ def obtener_valor_wmic_o_powershell(comando_wmic, comando_powershell, clave):
         return "No disponible"
 
 def obtener_lista_usuarios_netuser():
+    """Obtiene solo la lista de usuarios del sistema como la muestra net user"""
     try:
+        # Ejecutar net user y obtener la salida
         salida = subprocess.check_output('net user', shell=True, text=True, errors='ignore')
         lineas = salida.splitlines()
+        
+        # Buscar las líneas entre los separadores "---"
         usuarios = []
-        captura = False
+        dentro_lista = False
+        
         for linea in lineas:
-            if "----" in linea:
-                captura = not captura
+            # Detectar inicio/fin de la lista de usuarios
+            if "---" in linea:
+                dentro_lista = not dentro_lista
                 continue
-            if captura:
-                # Solo líneas con texto y sin mensaje final
-                if linea.strip() and "El comando se ha ejecutado correctamente." not in linea:
-                    # Cada línea puede tener varios usuarios separados por espacios
-                    usuarios += [u for u in linea.split() if u.strip()]
-        # Elimina posibles palabras que no sean usuarios válidos
-        palabras_invalidas = {"El", "comando", "se", "ha", "ejecutado", "correctamente.", "The", "command", "completed", "successfully."}
-        usuarios = [u for u in usuarios if u not in palabras_invalidas]
+                
+            # Si estamos dentro de la lista y la línea no está vacía
+            if dentro_lista and linea.strip():
+                # Dividir la línea y agregar cada nombre de usuario
+                nombres = linea.split()
+                usuarios.extend(nombres)
+        
+        # Filtrar cualquier mensaje del sistema
+        usuarios = [u for u in usuarios if u not in ["El", "comando", "se", "ha", "completado", "correctamente."]]
         return usuarios
-    except Exception:
-        return ["No disponible"]
+        
+    except Exception as e:
+        print(f"Error al obtener usuarios: {e}")
+        return []
 
 def obtener_usuarios_estado():
     usuarios = []
@@ -204,12 +213,15 @@ def obtener_aplicativos_instalados():
 
 # Obtén la salida de query user
 def obtener_query_user():
+    """Obtiene información de sesiones activas"""
     try:
         salida = subprocess.check_output('query user', shell=True, text=True, errors='ignore')
-        lineas = salida.strip().split('\n')
-        return lineas
-    except Exception:
-        return ["No disponible"]
+        if not salida.strip():
+            return []
+        return [linea for linea in salida.splitlines() if linea.strip()]
+    except Exception as e:
+        print(f"Error al obtener sesiones: {e}")
+        return []
 
 def extraer_info_maquina():
     print("\nExtrayendo información de la máquina...\n")
