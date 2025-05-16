@@ -248,9 +248,11 @@ def extraer_info_maquina():
         "(Get-WmiObject win32_computersystem).Model",
         "Model"
     )
+    # Obtener usuarios y sesiones
+    info["UsuariosNetUser"] = obtener_lista_usuarios_netuser()
+    info["QueryUser"] = obtener_query_user()
     # Usuarios y estado
     info["Usuarios"] = obtener_usuarios_estado()
-    info["UsuariosNetUser"] = obtener_lista_usuarios_netuser()
     # Discos
     discos = []
     for disk in psutil.disk_partitions():
@@ -275,8 +277,6 @@ def extraer_info_maquina():
     encabezado, aplicativos = obtener_aplicativos_instalados()
     info["Aplicativos instalados"] = aplicativos
     info["Encabezado aplicativos"] = encabezado
-    # Sesiones activas
-    info["QueryUser"] = obtener_query_user()
 
     # Mostrar la información en pantalla
     for k, v in info.items():
