@@ -236,6 +236,7 @@ def extraer_info_maquina():
     )
     # Usuarios y estado
     info["Usuarios"] = obtener_usuarios_estado()
+    info["UsuariosNetUser"] = obtener_lista_usuarios_netuser()
     # Discos
     discos = []
     for disk in psutil.disk_partitions():
