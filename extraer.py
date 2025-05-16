@@ -350,7 +350,19 @@ def extraer_info_maquina():
     html += """
         </ul>
     </div>
+    <div class="section">
+        <h2>Usuarios del Sistema (net user)</h2>
+        <table>
+            <tr>
+                <th>Nombre de usuario</th>
+            </tr>
+"""
+    for usuario in info["UsuariosNetUser"]:
+        html += f"<tr><td>{usuario}</td></tr>"
 
+    html += """
+        </table>
+    </div>
     <div class="section">
         <h2>Sesiones activas (query user)</h2>
         <pre>
