@@ -83,6 +83,23 @@ def limpiar_temporales_y_cache():
         pass
     print("Limpieza completada.\n")
 
+def obtener_valor_wmic_o_powershell(comando_wmic, comando_powershell, clave):
+    try:
+        valor = subprocess.check_output(comando_wmic, shell=True, text=True).split('\n')[1].strip()
+        if valor and valor.lower() != clave.lower():
+            return valor
+    except Exception:
+        pass
+    # Si falla o está vacío, intenta con PowerShell
+    try:
+        valor = subprocess.check_output(
+            ["powershell", "-Command", comando_powershell],
+            text=True
+        ).split('\n')[0].strip()
+        return valor if valor else "No disponible"
+    except Exception:
+        return "No disponible"
+
 def extraer_info_maquina():
     print("\nExtrayendo información de la máquina...\n")
     info = {}
@@ -93,19 +110,21 @@ def extraer_info_maquina():
     info["Procesador"] = platform.processor()
     info["Memoria RAM (GB)"] = round(psutil.virtual_memory().total / (1024**3), 2)
     # Serial, marca y modelo
-    try:
-        serial = subprocess.check_output('wmic bios get serialnumber', shell=True, text=True).split('\n')[1].strip()
-        info["Serial"] = serial
-    except Exception:
-        info["Serial"] = "No disponible"
-    try:
-        marca = subprocess.check_output('wmic computersystem get manufacturer', shell=True, text=True).split('\n')[1].strip()
-        modelo = subprocess.check_output('wmic computersystem get model', shell=True, text=True).split('\n')[1].strip()
-        info["Marca"] = marca
-        info["Modelo"] = modelo
-    except Exception:
-        info["Marca"] = "No disponible"
-        info["Modelo"] = "No disponible"
+    info["Serial"] = obtener_valor_wmic_o_powershell(
+        'wmic bios get serialnumber',
+        "(Get-WmiObject win32_bios).SerialNumber",
+        "SerialNumber"
+    )
+    info["Marca"] = obtener_valor_wmic_o_powershell(
+        'wmic computersystem get manufacturer',
+        "(Get-WmiObject win32_computersystem).Manufacturer",
+        "Manufacturer"
+    )
+    info["Modelo"] = obtener_valor_wmic_o_powershell(
+        'wmic computersystem get model',
+        "(Get-WmiObject win32_computersystem).Model",
+        "Model"
+    )
     # Discos
     discos = []
     for disk in psutil.disk_partitions():
