@@ -251,8 +251,6 @@ def extraer_info_maquina():
     # Obtener usuarios y sesiones
     info["UsuariosNetUser"] = obtener_lista_usuarios_netuser()
     info["QueryUser"] = obtener_query_user()
-    # Usuarios y estado
-    info["Usuarios"] = obtener_usuarios_estado()
     # Discos
     discos = []
     for disk in psutil.disk_partitions():
