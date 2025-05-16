@@ -159,7 +159,13 @@ def extraer_info_maquina():
 
     # Mostrar la información en pantalla
     for k, v in info.items():
-        if isinstance(v, list):
+        if k == "Discos" and isinstance(v, list):
+            print(f"{k}:")
+            for disco in v:
+                print(f"  - Unidad: {disco['Disco']}")
+                print(f"    Tamaño total (GB): {disco['Tamaño total (GB)']}")
+                print(f"    Disponible (GB): {disco['Disponible (GB)']}")
+        elif isinstance(v, list):
             print(f"{k}:")
             for item in v:
                 print(f"  {item}")
@@ -171,7 +177,16 @@ def extraer_info_maquina():
     html = "<html><head><meta charset='utf-8'><title>Reporte de Información de la Máquina</title></head><body>"
     html += "<h1>Reporte de Información de la Máquina</h1><ul>"
     for k, v in info.items():
-        if isinstance(v, list):
+        if k == "Discos" and isinstance(v, list):
+            html += f"<li><b>{k}:</b><ul>"
+            for disco in v:
+                html += "<li>"
+                html += f"Unidad: {disco['Disco']}<br>"
+                html += f"Tamaño total (GB): {disco['Tamaño total (GB)']}<br>"
+                html += f"Disponible (GB): {disco['Disponible (GB)']}"
+                html += "</li>"
+            html += "</ul></li>"
+        elif isinstance(v, list):
             html += f"<li><b>{k}:</b><ul>"
             for item in v:
                 html += f"<li>{item}</li>"
