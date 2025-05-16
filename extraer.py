@@ -149,6 +149,8 @@ def extraer_info_maquina():
         "(Get-WmiObject win32_computersystem).Model",
         "Model"
     )
+    # Usuarios y estado
+    info["Usuarios"] = obtener_usuarios_estado()
     # Discos
     discos = []
     for disk in psutil.disk_partitions():
