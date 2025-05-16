@@ -111,9 +111,11 @@ def obtener_lista_usuarios_netuser():
                 captura = not captura
                 continue
             if captura:
+                # Solo líneas con texto y sin mensaje final
                 if linea.strip() and "El comando se ha ejecutado correctamente." not in linea:
+                    # Cada línea puede tener varios usuarios separados por espacios
                     usuarios += [u for u in linea.split() if u.strip()]
-        # Filtrar posibles palabras que no sean usuarios válidos
+        # Elimina posibles palabras que no sean usuarios válidos
         palabras_invalidas = {"El", "comando", "se", "ha", "ejecutado", "correctamente.", "The", "command", "completed", "successfully."}
         usuarios = [u for u in usuarios if u not in palabras_invalidas]
         return usuarios
