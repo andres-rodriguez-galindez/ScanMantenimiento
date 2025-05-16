@@ -114,20 +114,34 @@ def obtener_usuarios_estado():
             if captura:
                 # Evita líneas vacías y el mensaje final
                 if linea.strip() and "El comando se ha ejecutado correctamente." not in linea:
+                    # Solo agrega si la línea tiene algo y no es mensaje final
                     usuarios_encontrados += [u for u in linea.split() if u.strip()]
         # Filtrar posibles palabras que no sean usuarios válidos
-        palabras_invalidas = {"El", "comando", "se", "ha", "ejecutado", "correctamente."}
+        palabras_invalidas = {"El", "comando", "se", "ha", "ejecutado", "correctamente.", "The", "command", "completed", "successfully."}
         usuarios_encontrados = [u for u in usuarios_encontrados if u not in palabras_invalidas]
+        # Depuración: imprime los usuarios encontrados
+        print("Usuarios detectados:", usuarios_encontrados)
         # Consultar el estado de cada usuario real
         for usuario in usuarios_encontrados:
             try:
                 detalle = subprocess.check_output(f'net user "{usuario}"', shell=True, text=True, errors='ignore')
-                if "Cuenta activa               Sí" in detalle:
-                    estado = "Activo"
-                elif "Cuenta activa               No" in detalle:
-                    estado = "Inactivo"
+                # Busca tanto en español como en inglés
+                if "Cuenta activa" in detalle:
+                    if "Cuenta activa               Sí" in detalle:
+                        estado = "Activo"
+                    elif "Cuenta activa               No" in detalle:
+                        estado = "Inactivo"
+                    else:
+                        continue
+                elif "Account active" in detalle:
+                    if "Account active               Yes" in detalle:
+                        estado = "Activo"
+                    elif "Account active               No" in detalle:
+                        estado = "Inactivo"
+                    else:
+                        continue
                 else:
-                    continue  # Solo muestra Activo o Inactivo
+                    continue  # Si no se puede determinar, no lo muestra
                 usuarios.append(f"{usuario} ({estado})")
             except Exception:
                 continue  # Si hay error, no lo muestra
