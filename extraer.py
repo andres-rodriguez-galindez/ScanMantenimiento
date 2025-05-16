@@ -100,6 +100,30 @@ def obtener_valor_wmic_o_powershell(comando_wmic, comando_powershell, clave):
     except Exception:
         return "No disponible"
 
+def obtener_usuarios_estado():
+    usuarios = []
+    try:
+        salida = subprocess.check_output('net user', shell=True, text=True, errors='ignore')
+        lineas = salida.split('\n')[4:]
+        for linea in lineas:
+            for usuario in linea.split():
+                if usuario.strip() and usuario.strip() not in ["El", "comando", "se", "ejecutó", "correctamente."]:
+                    # Consultar detalles del usuario
+                    try:
+                        detalle = subprocess.check_output(f'net user "{usuario}"', shell=True, text=True, errors='ignore')
+                        if "Cuenta activa               Sí" in detalle:
+                            estado = "Activo"
+                        elif "Cuenta activa               No" in detalle:
+                            estado = "Inactivo"
+                        else:
+                            estado = "Desconocido"
+                        usuarios.append(f"{usuario} ({estado})")
+                    except Exception:
+                        usuarios.append(f"{usuario} (Error al consultar estado)")
+    except Exception:
+        usuarios.append("No disponible")
+    return usuarios
+
 def extraer_info_maquina():
     print("\nExtrayendo información de la máquina...\n")
     info = {}
