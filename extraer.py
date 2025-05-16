@@ -112,10 +112,9 @@ def obtener_usuarios_estado():
                 captura = not captura
                 continue
             if captura:
-                # Solo agregar si la línea no está vacía y no contiene el mensaje final
                 if linea.strip() and "El comando se ha ejecutado correctamente." not in linea:
                     usuarios_encontrados.extend(linea.split())
-        # Filtrar posibles palabras que no sean usuarios válidos
+        # Palabras que no son usuarios
         palabras_invalidas = {"El", "comando", "se", "ha", "ejecutado", "correctamente."}
         usuarios_encontrados = [u for u in usuarios_encontrados if u not in palabras_invalidas]
         # Consultar el estado de cada usuario real
@@ -127,10 +126,10 @@ def obtener_usuarios_estado():
                 elif "Cuenta activa               No" in detalle:
                     estado = "Inactivo"
                 else:
-                    estado = "Desconocido"
+                    continue  # Si no se puede determinar, no lo muestra
                 usuarios.append(f"{usuario} ({estado})")
             except Exception:
-                usuarios.append(f"{usuario} (Error al consultar estado)")
+                continue  # Si hay error, no lo muestra
     except Exception:
         usuarios.append("No disponible")
     return usuarios
