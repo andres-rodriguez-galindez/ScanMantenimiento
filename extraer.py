@@ -311,11 +311,13 @@ def extraer_info_maquina():
 """
     for col in info["Encabezado aplicativos"]:
         html += f"<th>{col}</th>"
-    html += """
-            </tr>
-"""
+    html += "</tr>\n"
+
     for app in info["Aplicativos instalados"]:
-        html += "<tr>" + "".join(f"<td>{campo}</td>" for campo in app) + "</tr>"
+        html += "<tr>"
+        for campo in app:
+            html += f"<td>{campo}</td>"
+        html += "</tr>\n"
 
     html += """
         </table>
