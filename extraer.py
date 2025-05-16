@@ -212,9 +212,10 @@ def extraer_info_maquina():
         info["Tarjeta gráfica"] = tarjetas
     except Exception:
         info["Tarjeta gráfica"] = "No disponible"
-    # Aplicativos instalados (Panel de control)
+    # Aplicativos instalados (más parecido a Programas y características)
     encabezado, aplicativos = obtener_aplicativos_instalados()
     info["Aplicativos instalados"] = aplicativos
+    info["Encabezado aplicativos"] = encabezado
 
     # Mostrar la información en pantalla
     for k, v in info.items():
@@ -308,7 +309,7 @@ def extraer_info_maquina():
         <table>
             <tr>
 """
-    for col in encabezado:
+    for col in info["Encabezado aplicativos"]:
         html += f"<th>{col}</th>"
     html += """
             </tr>
