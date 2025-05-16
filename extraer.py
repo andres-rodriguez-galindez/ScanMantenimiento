@@ -181,6 +181,15 @@ def obtener_aplicativos_instalados():
     except Exception:
         return ["Nombre", "Editor", "Fecha de instalación", "Versión", "Tamaño (KB)"], [["No disponible"]*5]
 
+# Obtén la salida de query user
+def obtener_query_user():
+    try:
+        salida = subprocess.check_output('query user', shell=True, text=True, errors='ignore')
+        lineas = salida.strip().split('\n')
+        return lineas
+    except Exception:
+        return ["No disponible"]
+
 def extraer_info_maquina():
     print("\nExtrayendo información de la máquina...\n")
     info = {}
@@ -232,6 +241,8 @@ def extraer_info_maquina():
     encabezado, aplicativos = obtener_aplicativos_instalados()
     info["Aplicativos instalados"] = aplicativos
     info["Encabezado aplicativos"] = encabezado
+    # Sesiones activas
+    info["QueryUser"] = obtener_query_user()
 
     # Mostrar la información en pantalla
     for k, v in info.items():
@@ -318,6 +329,16 @@ def extraer_info_maquina():
 
     html += """
         </ul>
+    </div>
+
+    <div class="section">
+        <h2>Sesiones activas (query user)</h2>
+        <pre>
+"""
+    for linea in info["QueryUser"]:
+        html += f"{linea}\n"
+    html += """
+        </pre>
     </div>
 
     <div class="section">
