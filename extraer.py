@@ -133,6 +133,38 @@ def obtener_usuarios_estado():
         usuarios.append("No disponible")
     return usuarios
 
+def obtener_aplicativos_instalados():
+    try:
+        comando = [
+            "powershell",
+            "-Command",
+            r"""
+            Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*,
+                              HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\* |
+            Where-Object { $_.DisplayName } |
+            Select-Object DisplayName, Publisher, InstallDate, DisplayVersion, EstimatedSize |
+            Sort-Object DisplayName
+            """
+        ]
+        salida = subprocess.check_output(comando, text=True, errors='ignore')
+        lineas = salida.splitlines()
+        # Buscar el encabezado y los datos
+        datos = []
+        encabezado = []
+        for i, linea in enumerate(lineas):
+            if "DisplayName" in linea and "Publisher" in linea:
+                encabezado = [col.strip() for col in linea.split()]
+                start = i + 2  # Los datos empiezan dos líneas después
+                break
+        for linea in lineas[start:]:
+            if linea.strip():
+                # Separar por columnas fijas (puede requerir ajuste según el sistema)
+                partes = [linea[0:40].strip(), linea[40:70].strip(), linea[70:80].strip(), linea[80:100].strip(), linea[100:].strip()]
+                datos.append(partes)
+        return encabezado, datos
+    except Exception:
+        return ["Nombre", "Editor", "Fecha de instalación", "Versión", "Tamaño (KB)"], [["No disponible"]*5]
+
 def extraer_info_maquina():
     print("\nExtrayendo información de la máquina...\n")
     info = {}
@@ -181,15 +213,7 @@ def extraer_info_maquina():
     except Exception:
         info["Tarjeta gráfica"] = "No disponible"
     # Aplicativos instalados (Panel de control)
-    aplicativos = []
-    try:
-        salida = subprocess.check_output('wmic product get name,installdate,version,vendor', shell=True, text=True, errors='ignore')
-        lineas = salida.split('\n')[1:]
-        for linea in lineas:
-            if linea.strip():
-                aplicativos.append(linea.strip())
-    except Exception:
-        aplicativos.append("No disponible")
+    encabezado, aplicativos = obtener_aplicativos_instalados()
     info["Aplicativos instalados"] = aplicativos
 
     # Mostrar la información en pantalla
@@ -209,7 +233,7 @@ def extraer_info_maquina():
     print("\nPara consultar la garantía, use el serial en la web del fabricante.\n")
 
     # Guardar la información en HTML
-    html = """
+    html = f"""
 <html>
 <head>
     <meta charset='utf-8'>
@@ -227,72 +251,70 @@ def extraer_info_maquina():
 </head>
 <body>
     <h1>Reporte de Información de la Máquina</h1>
-    ...
-""".format(
-        info["Nombre del equipo"],
-        info["Usuario actual"],
-        info["Sistema operativo"],
-        info["Arquitectura"],
-        info["Procesador"],
-        info["Memoria RAM (GB)"],
-        info["Serial"],
-        info["Marca"],
-        info["Modelo"]
-    )
 
+    <div class="section">
+        <h2>Datos Generales</h2>
+        <ul>
+            <li><b>Nombre del equipo:</b> {info["Nombre del equipo"]}</li>
+            <li><b>Usuario actual:</b> {info["Usuario actual"]}</li>
+            <li><b>Sistema operativo:</b> {info["Sistema operativo"]}</li>
+            <li><b>Arquitectura:</b> {info["Arquitectura"]}</li>
+            <li><b>Procesador:</b> {info["Procesador"]}</li>
+            <li><b>Memoria RAM (GB):</b> {info["Memoria RAM (GB)"]}</li>
+            <li><b>Serial:</b> {info["Serial"]}</li>
+            <li><b>Marca:</b> {info["Marca"]}</li>
+            <li><b>Modelo:</b> {info["Modelo"]}</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Discos</h2>
+        <ul>
+"""
     for disco in info["Discos"]:
-        html += "<li><b>Unidad:</b> {} | <b>Tamaño total (GB):</b> {} | <b>Disponible (GB):</b> {}</li>".format(
-            disco["Disco"], disco["Tamaño total (GB)"], disco["Disponible (GB)"]
-        )
+        html += f"<li><b>Unidad:</b> {disco['Disco']} | <b>Tamaño total (GB):</b> {disco['Tamaño total (GB)']} | <b>Disponible (GB):</b> {disco['Disponible (GB)']}</li>"
 
     html += """
         </ul>
     </div>
+
     <div class="section">
         <h2>Tarjeta Gráfica</h2>
         <ul>
 """
-
     if isinstance(info["Tarjeta gráfica"], list):
         for tarjeta in info["Tarjeta gráfica"]:
-            html += "<li>{}</li>".format(tarjeta)
+            html += f"<li>{tarjeta}</li>"
     else:
-        html += "<li>{}</li>".format(info["Tarjeta gráfica"])
+        html += f"<li>{info['Tarjeta gráfica']}</li>"
 
     html += """
         </ul>
     </div>
+
+    <div class="section">
+        <h2>Usuarios del Sistema</h2>
+        <ul>
+"""
+    for usuario in info["Usuarios"]:
+        html += f"<li>{usuario}</li>"
+
+    html += """
+        </ul>
+    </div>
+
     <div class="section">
         <h2>Aplicativos Instalados</h2>
         <table>
             <tr>
-                <th>Nombre</th>
-                <th>Fecha de instalación</th>
-                <th>Versión</th>
-                <th>Fabricante</th>
+"""
+    for col in encabezado:
+        html += f"<th>{col}</th>"
+    html += """
             </tr>
 """
-
-    # Procesar aplicativos para tabla
     for app in info["Aplicativos instalados"]:
-        # Separar por espacios múltiples, puede variar según el formato de wmic
-        partes = app.split()
-        if len(partes) >= 4:
-            nombre = " ".join(partes[:-3])
-            fecha = partes[-3]
-            version = partes[-2]
-            fabricante = partes[-1]
-        elif len(partes) == 3:
-            nombre = partes[0]
-            fecha = partes[1]
-            version = partes[2]
-            fabricante = ""
-        else:
-            nombre = app
-            fecha = version = fabricante = ""
-        html += "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format(
-            nombre, fecha, version, fabricante
-        )
+        html += "<tr>" + "".join(f"<td>{campo}</td>" for campo in app) + "</tr>"
 
     html += """
         </table>
