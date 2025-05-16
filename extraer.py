@@ -114,18 +114,20 @@ def obtener_usuarios_estado():
             if captura:
                 # Evita líneas vacías y el mensaje final
                 if linea.strip() and "El comando se ha ejecutado correctamente." not in linea:
-                    # Agrega todos los nombres de usuario de la línea
                     usuarios_encontrados += [u for u in linea.split() if u.strip()]
+        # Filtrar posibles palabras que no sean usuarios válidos
+        palabras_invalidas = {"El", "comando", "se", "ha", "ejecutado", "correctamente."}
+        usuarios_encontrados = [u for u in usuarios_encontrados if u not in palabras_invalidas]
         # Consultar el estado de cada usuario real
         for usuario in usuarios_encontrados:
             try:
-                detalle = subprocess.check_output(f'net user \"{usuario}\"', shell=True, text=True, errors='ignore')
+                detalle = subprocess.check_output(f'net user "{usuario}"', shell=True, text=True, errors='ignore')
                 if "Cuenta activa               Sí" in detalle:
                     estado = "Activo"
                 elif "Cuenta activa               No" in detalle:
                     estado = "Inactivo"
                 else:
-                    continue  # Si no se puede determinar, no lo muestra
+                    continue  # Solo muestra Activo o Inactivo
                 usuarios.append(f"{usuario} ({estado})")
             except Exception:
                 continue  # Si hay error, no lo muestra
