@@ -359,18 +359,23 @@ def extraer_info_maquina():
 """
     for usuario in info["UsuariosNetUser"]:
         html += f"<tr><td>{usuario}</td></tr>"
-
     html += """
         </table>
     </div>
     <div class="section">
         <h2>Sesiones activas (query user)</h2>
-        <pre>
+        <table>
 """
-    for linea in info["QueryUser"]:
-        html += f"{linea}\n"
+    # La primera línea de QueryUser es el encabezado
+    if info["QueryUser"]:
+        encabezado = info["QueryUser"][0].split()
+        html += "<tr>" + "".join(f"<th>{col}</th>" for col in encabezado) + "</tr>\n"
+        for linea in info["QueryUser"][1:]:
+            if linea.strip():
+                columnas = linea.split()
+                html += "<tr>" + "".join(f"<td>{col}</td>" for col in columnas) + "</tr>\n"
     html += """
-        </pre>
+        </table>
     </div>
 
     <div class="section">
