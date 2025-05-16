@@ -209,28 +209,116 @@ def extraer_info_maquina():
     print("\nPara consultar la garantía, use el serial en la web del fabricante.\n")
 
     # Guardar la información en HTML
-    html = "<html><head><meta charset='utf-8'><title>Reporte de Información de la Máquina</title></head><body>"
-    html += "<h1>Reporte de Información de la Máquina</h1><ul>"
-    for k, v in info.items():
-        if k == "Discos" and isinstance(v, list):
-            html += f"<li><b>{k}:</b><ul>"
-            for disco in v:
-                html += "<li>"
-                html += f"Unidad: {disco['Disco']}<br>"
-                html += f"Tamaño total (GB): {disco['Tamaño total (GB)']}<br>"
-                html += f"Disponible (GB): {disco['Disponible (GB)']}"
-                html += "</li>"
-            html += "</ul></li>"
-        elif isinstance(v, list):
-            html += f"<li><b>{k}:</b><ul>"
-            for item in v:
-                html += f"<li>{item}</li>"
-            html += "</ul></li>"
+    html = """
+<html>
+<head>
+    <meta charset='utf-8'>
+    <title>Reporte de Información de la Máquina</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; }
+        h1 { color: #2c3e50; }
+        h2 { color: #34495e; }
+        ul { margin-bottom: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
+        th, td { border: 1px solid #888; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .section { margin-bottom: 30px; }
+    </style>
+</head>
+<body>
+    <h1>Reporte de Información de la Máquina</h1>
+
+    <div class="section">
+        <h2>Datos Generales</h2>
+        <ul>
+            <li><b>Nombre del equipo:</b> {}</li>
+            <li><b>Usuario actual:</b> {}</li>
+            <li><b>Sistema operativo:</b> {}</li>
+            <li><b>Arquitectura:</b> {}</li>
+            <li><b>Procesador:</b> {}</li>
+            <li><b>Memoria RAM (GB):</b> {}</li>
+            <li><b>Serial:</b> {}</li>
+            <li><b>Marca:</b> {}</li>
+            <li><b>Modelo:</b> {}</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Discos</h2>
+        <ul>
+""".format(
+        info["Nombre del equipo"],
+        info["Usuario actual"],
+        info["Sistema operativo"],
+        info["Arquitectura"],
+        info["Procesador"],
+        info["Memoria RAM (GB)"],
+        info["Serial"],
+        info["Marca"],
+        info["Modelo"]
+    )
+
+    for disco in info["Discos"]:
+        html += "<li><b>Unidad:</b> {} | <b>Tamaño total (GB):</b> {} | <b>Disponible (GB):</b> {}</li>".format(
+            disco["Disco"], disco["Tamaño total (GB)"], disco["Disponible (GB)"]
+        )
+
+    html += """
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Tarjeta Gráfica</h2>
+        <ul>
+"""
+
+    if isinstance(info["Tarjeta gráfica"], list):
+        for tarjeta in info["Tarjeta gráfica"]:
+            html += "<li>{}</li>".format(tarjeta)
+    else:
+        html += "<li>{}</li>".format(info["Tarjeta gráfica"])
+
+    html += """
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Aplicativos Instalados</h2>
+        <table>
+            <tr>
+                <th>Nombre</th>
+                <th>Fecha de instalación</th>
+                <th>Versión</th>
+                <th>Fabricante</th>
+            </tr>
+"""
+
+    # Procesar aplicativos para tabla
+    for app in info["Aplicativos instalados"]:
+        # Separar por espacios múltiples, puede variar según el formato de wmic
+        partes = app.split()
+        if len(partes) >= 4:
+            nombre = " ".join(partes[:-3])
+            fecha = partes[-3]
+            version = partes[-2]
+            fabricante = partes[-1]
+        elif len(partes) == 3:
+            nombre = partes[0]
+            fecha = partes[1]
+            version = partes[2]
+            fabricante = ""
         else:
-            html += f"<li><b>{k}:</b> {v}</li>"
-    html += "</ul>"
-    html += "<p><i>Para consultar la garantía, use el serial en la web del fabricante.</i></p>"
-    html += "</body></html>"
+            nombre = app
+            fecha = version = fabricante = ""
+        html += "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format(
+            nombre, fecha, version, fabricante
+        )
+
+    html += """
+        </table>
+    </div>
+    <p><i>Para consultar la garantía, use el serial en la web del fabricante.</i></p>
+</body>
+</html>
+"""
+
     with open("reporte_maquina.html", "w", encoding="utf-8") as f:
         f.write(html)
     print("También se ha guardado un archivo 'reporte_maquina.html' en la carpeta actual. Puede abrirlo con su navegador y exportarlo a PDF.\n")
