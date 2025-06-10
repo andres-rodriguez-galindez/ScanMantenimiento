@@ -132,8 +132,8 @@ def obtener_lista_usuarios_netuser():
         return []
 
 def obtener_query_user():
-    """Obtiene información de sesiones activas"""
     try:
+        # Ejecutar el comando para obtener sesiones activas
         salida = subprocess.check_output('query user', shell=True, text=True, errors='ignore')
         if not salida.strip():
             return []
@@ -143,47 +143,30 @@ def obtener_query_user():
         return []
 
 def obtener_usuarios_y_estado():
-    """Obtiene las cuentas de usuario en el equipo y verifica si están habilitadas o deshabilitadas."""
+    """Obtiene las cuentas de usuario en el equipo y verifica si están habilitadas o deshabilitadas usando PowerShell."""
     usuarios = []
+
     try:
-        # Ejecutar el comando 'net user' para obtener la lista de usuarios
-        salida = subprocess.check_output('net user', shell=True, text=True, errors='ignore')
+        # Ejecutar el comando de PowerShell para obtener usuarios locales
+        comando = [
+            "powershell",
+            "-Command",
+            "Get-LocalUser | Select-Object Name,Enabled | ConvertTo-Csv -NoTypeInformation"
+        ]
+        salida = subprocess.check_output(comando, text=True, errors='ignore')
         lineas = salida.splitlines()
-        usuarios_encontrados = []
-        captura = False
 
-        # Procesar las líneas para extraer los nombres de usuario
-        for linea in lineas:
-            if "----" in linea:  # Detectar separadores
-                captura = not captura
-                continue
-            if captura:
-                if linea.strip() and "El comando se ha ejecutado correctamente." not in linea:
-                    # Dividir la línea en palabras y agregar solo nombres válidos
-                    usuarios_encontrados += [u for u in linea.split() if u.strip()]
-
-        # Filtrar palabras no válidas
-        palabras_invalidas = {"El", "comando", "se", "ha", "completado", "correctamente.", "The", "command", "completed", "successfully."}
-        usuarios_encontrados = [u for u in usuarios_encontrados if u not in palabras_invalidas]
-
-        # Validar que los nombres de usuario sean válidos (por ejemplo, no números o palabras sueltas)
-        usuarios_encontrados = [u for u in usuarios_encontrados if len(u) > 1 and not u.isdigit()]
-
-        # Consultar el estado de cada usuario
-        for usuario in usuarios_encontrados:
-            try:
-                detalle = subprocess.check_output(f'net user "{usuario}"', shell=True, text=True, errors='ignore')
-                if "Cuenta activa               Sí" in detalle or "Account active               Yes" in detalle:
-                    estado = "Habilitado"
-                elif "Cuenta activa               No" in detalle or "Account active               No" in detalle:
-                    estado = "Deshabilitado"
-                else:
-                    estado = "Desconocido"
-                usuarios.append({"Usuario": usuario, "Estado": estado})
-            except Exception:
-                usuarios.append({"Usuario": usuario, "Estado": "Error al consultar"})
+        # Procesar las líneas para extraer usuarios y su estado
+        for linea in lineas[1:]:  # Saltar la primera línea (encabezado)
+            if linea.strip():
+                partes = linea.split(",")
+                if len(partes) == 2:
+                    nombre = partes[0].strip('"')  # Eliminar comillas si las hay
+                    estado = "Habilitado" if partes[1].strip().lower() == "true" else "Deshabilitado"
+                    usuarios.append({"Usuario": nombre, "Estado": estado})
     except Exception as e:
         print(f"Error al obtener usuarios: {e}")
+
     return usuarios
 
 def obtener_aplicativos_instalados():
@@ -220,7 +203,8 @@ def obtener_aplicativos_instalados():
         else:
             print("Encabezado no encontrado. No se pudieron procesar los aplicativos instalados.")
         return encabezado, datos
-    except Exception:
+    except Exception as e:
+        print(f"Error al obtener aplicativos instalados: {e}")
         return ["Nombre", "Editor", "Fecha de instalación", "Versión", "Tamaño (KB)"], [["No disponible"]*5]
 
 def extraer_info_maquina():
@@ -281,23 +265,6 @@ def extraer_info_maquina():
     # Usuarios
     info["Usuarios"] = obtener_usuarios_y_estado()
 
-    # Mostrar la información en pantalla
-    for k, v in info.items():
-        if k == "Discos" and isinstance(v, list):
-            print(f"{k}:")
-            for disco in v:
-                print(f"  - Unidad: {disco['Disco']}")
-                print(f"    Tamaño total (GB): {disco['Tamaño total (GB)']}")
-                print(f"    Disponible (GB): {disco['Disponible (GB)']}")
-                print(f"    Usado (GB): {disco['Usado (GB)']}")
-        elif isinstance(v, list):
-            print(f"{k}:")
-            for item in v:
-                print(f"  {item}")
-        else:
-            print(f"{k}: {v}")
-    print("\nPara consultar la garantía, use el serial en la web del fabricante.\n")
-
     # Guardar la información en HTML
     html = f"""
 <html>
@@ -310,7 +277,7 @@ def extraer_info_maquina():
         h2 {{ color: #34495e; }}
         ul {{ margin-bottom: 20px; }}
         table {{ border-collapse: collapse; width: 100%; margin-bottom: 30px; }}
-        th, td {{ border: 1px solid #888; padding: 8px; text-align: left; }}
+        th, td {{ padding: 8px; text-align: left; }}
         th {{ background-color: #f2f2f2; }}
         .section {{ margin-bottom: 30px; }}
     </style>
@@ -347,29 +314,20 @@ def extraer_info_maquina():
     </div>
 
     <div class="section">
-        <h2>Tarjeta Gráfica</h2>
-        <ul>
+        <h2>Aplicaciones Instaladas</h2>
+        <table style="border-collapse: collapse; width: 100%; margin-bottom: 30px;">
 """
-    if isinstance(info["Tarjeta gráfica"], list):
-        for tarjeta in info["Tarjeta gráfica"]:
-            html += f"<li>{tarjeta}</li>"
-    else:
-        html += f"<li>{info['Tarjeta gráfica']}</li>"
+    encabezado, datos = obtener_aplicativos_instalados()
+    html += "<tr>"
+    for col in encabezado:
+        html += f"<th style='text-align: left; padding: 8px;'>{col}</th>"
+    html += "</tr>"
 
-    html += """
-        </ul>
-    </div>
-
-    <div class="section">
-        <h2>Usuarios del Sistema</h2>
-        <table>
-            <tr>
-                <th>Nombre de Usuario</th>
-                <th>Estado</th>
-            </tr>
-"""
-    for usuario in info["Usuarios"]:
-        html += f"<tr><td>{usuario['Usuario']}</td><td>{usuario['Estado']}</td></tr>"
+    for fila in datos:
+        html += "<tr>"
+        for celda in fila:
+            html += f"<td style='padding: 8px;'>{celda}</td>"
+        html += "</tr>"
 
     html += """
         </table>
